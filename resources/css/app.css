@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+
+@theme {
+    --color-msu-blue: #004ea1;
+    --color-msu-gold: #ffcc00;
+    --color-primary: var(--color-msu-blue);
+    --color-primary-foreground: white;
+}
+
+/* MSU Brand Colors */
+:root {
+    --msu-blue: #004ea1;
+    --msu-gold: #ffcc00;
+    --msu-dark: #1a1a1a;
+    --msu-light: #f5f5f5;
+    --success: #28a745;
+    --warning: #ffc107;
+    --danger: #dc3545;
+}
