@@ -142,12 +142,6 @@ class UserController extends Controller
                 if (Schema::hasTable('findings') && Schema::hasColumn('findings', 'assigned_to')) {
                     DB::table('findings')->where('assigned_to', $userId)->update(['assigned_to' => null]);
                 }
-                if (Schema::hasTable('action_items') && Schema::hasColumn('action_items', 'assigned_to')) {
-                    DB::table('action_items')->where('assigned_to', $userId)->update(['assigned_to' => null]);
-                }
-                if (Schema::hasTable('risk_registers') && Schema::hasColumn('risk_registers', 'owner_id')) {
-                    DB::table('risk_registers')->where('owner_id', $userId)->update(['owner_id' => null]);
-                }
                 if (Schema::hasTable('audits') && Schema::hasColumn('audits', 'approved_by')) {
                     DB::table('audits')->where('approved_by', $userId)->update(['approved_by' => null]);
                 }
@@ -165,6 +159,14 @@ class UserController extends Controller
                     if (Schema::hasColumn('reports', 'prepared_by')) {
                         DB::table('reports')->where('prepared_by', $userId)->update(['prepared_by' => $adminId]);
                     }
+                }
+
+                // 3. Reassign non-nullable creator / reviewer / owner foreign keys to current admin
+                if (Schema::hasTable('action_items') && Schema::hasColumn('action_items', 'assigned_to')) {
+                    DB::table('action_items')->where('assigned_to', $userId)->update(['assigned_to' => $adminId]);
+                }
+                if (Schema::hasTable('risk_registers') && Schema::hasColumn('risk_registers', 'owner_id')) {
+                    DB::table('risk_registers')->where('owner_id', $userId)->update(['owner_id' => $adminId]);
                 }
 
                 // 3. Reassign non-nullable creator / reviewer / owner foreign keys to current admin
