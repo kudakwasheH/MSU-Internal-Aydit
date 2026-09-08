@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\WelcomeNewUser;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Spatie\Permission\Models\Role;
 use Illuminate\Validation\Rules;
 
@@ -61,7 +63,15 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
-        return redirect()->route('users.index')->with('success', 'User created successfully. User can now authenticate via Google SSO.');
+        // Send welcome email notification
+        try {
+            Mail::to($user->email)->send(new WelcomeNewUser($user, $request->role));
+        } catch (\Throwable $e) {
+            Log::warning('Welcome email failed for ' . $user->email . ': ' . $e->getMessage());
+            return redirect()->route('users.index')->with('success', 'User created successfully, but the welcome email could not be sent.');
+        }
+
+        return redirect()->route('users.index')->with('success', 'User created successfully. A welcome email has been sent to ' . $user->email . '.');
     }
 
     /**
