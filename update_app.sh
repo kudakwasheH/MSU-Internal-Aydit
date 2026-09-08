@@ -26,8 +26,8 @@ npm run build
 echo "[5/8] Running database migrations..."
 php artisan migrate --force
 
-echo "[6/8] Running database seeders (idempotent)..."
-php artisan db:seed --class=UsersTableSeeder --force
+echo "[6/8] Skipping seeders (production — live user data)..."
+# User seeding disabled: system is live with real staff accounts
 
 echo "[7/8] Clearing and re-caching Laravel configuration..."
 php artisan config:clear
