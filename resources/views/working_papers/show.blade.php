@@ -41,7 +41,7 @@
                     <div>
                         <p class="text-[10px] font-bold text-slate-400 uppercase">Evidence Attached</p>
                         @if($workingPaper->file_path)
-                            <a href="{{ asset('storage/' . $workingPaper->file_path) }}" target="_blank" class="text-xs font-bold text-[#004ea1] hover:underline flex items-center gap-1 mt-1">
+                            <a href="{{ route('working-papers.download', $workingPaper) }}" target="_blank" class="text-xs font-bold text-[#004ea1] hover:underline flex items-center gap-1 mt-1">
                                 <i class="fas fa-file-pdf"></i> View Attachment
                             </a>
                         @else

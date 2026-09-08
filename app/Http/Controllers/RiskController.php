@@ -10,97 +10,143 @@ use Illuminate\Support\Facades\Auth;
 
 class RiskController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, \App\Services\RiskApiService $apiService)
     {
-        $query = RiskRegister::with('owner');
+        $risks = $apiService->fetchRisks();
 
-        if ($request->filled('category')) $query->where('category', $request->category);
-        if ($request->filled('status')) $query->where('status', $request->status);
+        // Convert to collection for easier filtering if needed
+        $risks = collect($risks);
+
+        if ($request->filled('category')) {
+            $risks = $risks->where('category', $request->category);
+        }
+        if ($request->filled('status')) {
+            $risks = $risks->where('status', $request->status);
+        }
         if ($request->filled('search')) {
-            $query->where(function($q) use ($request) {
-                $q->where('title', 'like', "%{$request->search}%")
-                  ->orWhere('risk_code', 'like', "%{$request->search}%");
+            $search = strtolower($request->search);
+            $risks = $risks->filter(function($risk) use ($search) {
+                return str_contains(strtolower($risk['title'] ?? ''), $search) || 
+                       str_contains(strtolower($risk['risk_code'] ?? ''), $search) ||
+                       str_contains((string)($risk['id'] ?? ''), $search);
             });
         }
 
-        $risks = $query->latest()->paginate(10);
+        // Map API data to RiskRegister model instances (without persisting)
+        $risks = $risks->map(function($apiRisk) {
+            // Find owner if possible, otherwise mock it
+            $owner = null;
+            if (!empty($apiRisk['owner_email'])) {
+                $owner = User::where('email', $apiRisk['owner_email'])->first();
+            }
+
+            $risk = new RiskRegister($apiRisk);
+            $risk->id = $apiRisk['id'] ?? null; 
+            $risk->risk_code = $apiRisk['risk_code'] ?? ($apiRisk['id'] ?? 'UNKNOWN');
+            $risk->setRelation('owner', $owner);
+            
+            // Set high-fidelity mock data if not in API
+            $risk->kra_at_risk = $apiRisk['kra_at_risk'] ?? 'Governance, Leadership and Culture';
+            $risk->cause = $apiRisk['cause'] ?? 'Lack of monitoring';
+            $risk->consequence = $apiRisk['consequence'] ?? 'Lack of governance and accountability';
+            $risk->last_reviewed_at = $apiRisk['last_reviewed_at'] ?? date('Y-m-d');
+
+            // Recalculate virtual attributes if not provided by API
+            if (!isset($apiRisk['inherent_risk_score'])) {
+                $risk->inherent_risk_score = (int)($apiRisk['inherent_likelihood'] ?? 0) * (int)($apiRisk['inherent_impact'] ?? 0);
+            }
+            if (!isset($apiRisk['residual_risk_score'])) {
+                $risk->residual_risk_score = (int)($apiRisk['residual_likelihood'] ?? 0) * (int)($apiRisk['residual_impact'] ?? 0);
+            }
+
+            return $risk;
+        });
+
+        // Manual pagination
+        $perPage = 10;
+        $page = $request->get('page', 1);
+        $paginatedRisks = new \Illuminate\Pagination\LengthAwarePaginator(
+            $risks->forPage($page, $perPage),
+            $risks->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $risks = $paginatedRisks;
         return view('risks.index', compact('risks'));
     }
 
-    public function create()
+    public function sync()
     {
-        $users = User::all();
-        return view('risks.create', compact('users'));
+        try {
+            $exitCode = \Illuminate\Support\Facades\Artisan::call('risk:sync');
+            $output = \Illuminate\Support\Facades\Artisan::output();
+            
+            if ($exitCode === 0) {
+                return redirect()->route('risks.index')->with('success', 'Risk register synced successfully from API.');
+            } else {
+                return redirect()->route('risks.index')->with('error', 'Failed to sync risks: ' . $output);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('risks.index')->with('error', 'Error during sync: ' . $e->getMessage());
+        }
     }
 
-    public function store(Request $request)
+    public function show($id, \App\Services\RiskApiService $apiService)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:operational,financial,compliance,strategic,it',
-            'inherent_likelihood' => 'required|integer|min:1|max:5',
-            'inherent_impact' => 'required|integer|min:1|max:5',
-            'residual_likelihood' => 'required|integer|min:1|max:5',
-            'residual_impact' => 'required|integer|min:1|max:5',
-            'owner_id' => 'required|exists:users,id',
-        ]);
+        $apiRisks = $apiService->fetchRisks();
+        $apiRisk = collect($apiRisks)->firstWhere('id', $id);
 
-        $year = date('Y');
-        $lastCode = RiskRegister::where('risk_code', 'like', "RISK-$year-%")->orderBy('risk_code', 'desc')->first();
-        $nextNum = $lastCode ? intval(substr($lastCode->risk_code, -4)) + 1 : 1;
-        $validated['risk_code'] = "RISK-$year-" . str_pad($nextNum, 4, '0', STR_PAD_LEFT);
-        $validated['status'] = 'active';
+        if (!$apiRisk) {
+            // Try searching by risk_code if id doesn't match
+            $apiRisk = collect($apiRisks)->firstWhere('risk_code', $id);
+        }
 
-        $risk = RiskRegister::create($validated);
-        AuditLog::log('create', 'risk', $risk->id, null, $risk->toArray());
+        if (!$apiRisk) {
+            abort(404, 'Risk not found in master register.');
+        }
 
-        return redirect()->route('risks.show', $risk)->with('success', 'Risk registered successfully.');
-    }
+        $risk = new RiskRegister($apiRisk);
+        $risk->id = $apiRisk['id'] ?? null;
 
-    public function show(RiskRegister $risk)
-    {
-        $risk->load(['owner', 'audits']);
+        // Find owner
+        if (!empty($apiRisk['owner_email'])) {
+            $owner = User::where('email', $apiRisk['owner_email'])->first();
+            $risk->setRelation('owner', $owner);
+        }
+
+        // Set high-fidelity mock data if not in API
+        $risk->kra_at_risk = $apiRisk['kra_at_risk'] ?? 'Governance, Leadership and Culture';
+        $risk->cause = $apiRisk['cause'] ?? 'Lack of monitoring';
+        $risk->consequence = $apiRisk['consequence'] ?? 'Lack of governance and accountability';
+        $risk->last_reviewed_at = $apiRisk['last_reviewed_at'] ?? date('Y-m-d');
+
+        // Recalculate virtual attributes
+        $risk->inherent_risk_score = (int)($apiRisk['inherent_likelihood'] ?? 0) * (int)($apiRisk['inherent_impact'] ?? 0);
+        $risk->residual_risk_score = (int)($apiRisk['residual_likelihood'] ?? 0) * (int)($apiRisk['residual_impact'] ?? 0);
+
+        // Load audits (this still requires the database link)
+        $dbRisk = RiskRegister::where('risk_code', $risk->risk_code)->first();
+        if ($dbRisk) {
+            $risk->setRelation('audits', $dbRisk->audits);
+        } else {
+            $risk->setRelation('audits', collect());
+        }
+
         return view('risks.show', compact('risk'));
     }
 
-    public function edit(RiskRegister $risk)
+    public function heatmap(\App\Services\RiskApiService $apiService)
     {
-        $users = User::all();
-        return view('risks.edit', compact('risk', 'users'));
-    }
-
-    public function update(Request $request, RiskRegister $risk)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:operational,financial,compliance,strategic,it',
-            'inherent_likelihood' => 'required|integer|min:1|max:5',
-            'inherent_impact' => 'required|integer|min:1|max:5',
-            'residual_likelihood' => 'required|integer|min:1|max:5',
-            'residual_impact' => 'required|integer|min:1|max:5',
-            'status' => 'required|in:active,mitigated,obsolete',
-            'owner_id' => 'required|exists:users,id',
-        ]);
-
-        $oldData = $risk->toArray();
-        $risk->update($validated);
-        AuditLog::log('update', 'risk', $risk->id, $oldData, $risk->fresh()->toArray());
-
-        return redirect()->route('risks.show', $risk)->with('success', 'Risk updated successfully.');
-    }
-
-    public function destroy(RiskRegister $risk)
-    {
-        AuditLog::log('delete', 'risk', $risk->id, $risk->toArray(), null);
-        $risk->delete();
-        return redirect()->route('risks.index')->with('success', 'Risk deleted.');
-    }
-
-    public function heatmap()
-    {
-        $risks = RiskRegister::where('status', 'active')->get();
+        $apiRisks = $apiService->fetchRisks();
+        $risks = collect($apiRisks)->where('status', 'active')->map(function($apiRisk) {
+            $risk = new RiskRegister($apiRisk);
+            $risk->inherent_risk_score = ($apiRisk['inherent_likelihood'] ?? 0) * ($apiRisk['inherent_impact'] ?? 0);
+            $risk->residual_risk_score = ($apiRisk['residual_likelihood'] ?? 0) * ($apiRisk['residual_impact'] ?? 0);
+            return $risk;
+        });
+        
         return view('risks.heatmap', compact('risks'));
     }
 }

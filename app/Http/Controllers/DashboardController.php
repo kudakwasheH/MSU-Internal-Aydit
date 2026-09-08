@@ -10,11 +10,19 @@ use App\Models\Escalation;
 use App\Models\User;
 use App\Models\KeyRiskIndicator;
 use App\Models\RiskTreatment;
+use App\Services\RiskApiService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    protected $apiService;
+
+    public function __construct(RiskApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public function index()
     {
         $user = Auth::user();
@@ -52,7 +60,7 @@ class DashboardController extends Controller
             'highRiskFindings' => Finding::whereIn('severity', ['high', 'critical'])->whereNotIn('status', ['closed', 'resolved'])->count(),
             'overdueActions' => ActionItem::where('status', 'overdue')->count(),
             'pendingActions' => ActionItem::where('status', 'pending')->count(),
-            'activeRisks' => RiskRegister::where('status', 'active')->count(),
+            'activeRisks' => $this->getActiveRisksCount(),
             'riskCoverage' => $this->getRiskCoverage(),
             'cycleTime' => $this->getCycleTimeAnalysis(),
             'recentFindings' => Finding::with(['audit', 'assignee'])->latest()->take(5)->get(),
@@ -87,17 +95,21 @@ class DashboardController extends Controller
 
     public function riskOfficer()
     {
+        $risks = collect($this->apiService->fetchRisks());
+
         $data = [
-            'totalRisks' => RiskRegister::count(),
-            'activeRisks' => RiskRegister::where('status', 'active')->count(),
-            'risksByCategory' => RiskRegister::select('category', DB::raw('count(*) as count'))->groupBy('category')->pluck('count', 'category'),
+            'totalRisks' => $risks->count(),
+            'activeRisks' => $risks->where('status', 'active')->count(),
+            'risksByCategory' => $risks->groupBy('category')->map->count(),
             'kriStats' => [
                 'green' => KeyRiskIndicator::where('status', 'green')->count(),
                 'yellow' => KeyRiskIndicator::where('status', 'yellow')->count(),
                 'red' => KeyRiskIndicator::where('status', 'red')->count(),
             ],
             'treatmentProgress' => RiskTreatment::avg('completion_percentage') ?? 0,
-            'topRisks' => RiskRegister::orderBy('residual_risk_score', 'desc')->take(5)->get(),
+            'topRisks' => $risks->sortByDesc(function($r) {
+                return ($r['residual_likelihood'] ?? 0) * ($r['residual_impact'] ?? 0);
+            })->take(5)->map(fn($r) => new RiskRegister($r)),
             'validationStatus' => '100% Pre-Audit Validated',
         ];
 
@@ -124,14 +136,16 @@ class DashboardController extends Controller
 
     public function executive()
     {
+        $risks = collect($this->apiService->fetchRisks());
+
         $data = [
-            'strategicRisks' => RiskRegister::where('category', 'strategic')->where('status', 'active')->count(),
+            'strategicRisks' => $risks->where('category', 'strategic')->where('status', 'active')->count(),
             'highRiskFindings' => Finding::whereIn('severity', ['high', 'critical'])->whereNotIn('status', ['closed', 'resolved'])->count(),
             'totalAudits' => Audit::count(),
             'completedAudits' => Audit::where('status', 'completed')->count(),
-            'riskCoverage' => $this->getRiskCoverage(),
+            'riskCoverage' => $this->getRiskCoverage($risks),
             'overdueActions' => ActionItem::where('status', 'overdue')->count(),
-            'risksByCategory' => RiskRegister::where('status', 'active')->select('category', DB::raw('count(*) as count'))->groupBy('category')->pluck('count', 'category'),
+            'risksByCategory' => $risks->where('status', 'active')->groupBy('category')->map->count(),
             'findingsBySeverity' => Finding::select('severity', DB::raw('count(*) as count'))->groupBy('severity')->pluck('count', 'severity'),
             'deptEfficiency' => $this->getDepartmentalEfficiency(),
         ];
@@ -139,11 +153,18 @@ class DashboardController extends Controller
         return view('dashboard.executive', $data);
     }
 
-    private function getRiskCoverage()
+    private function getRiskCoverage($risks = null)
     {
-        $totalRisks = RiskRegister::count();
+        if (!$risks) $risks = collect($this->apiService->fetchRisks());
+        $totalRisks = $risks->count();
         $coveredRisks = DB::table('audit_risks')->distinct('risk_id')->count('risk_id');
         return $totalRisks > 0 ? round(($coveredRisks / $totalRisks) * 100) : 0;
+    }
+
+    private function getActiveRisksCount()
+    {
+        $risks = collect($this->apiService->fetchRisks());
+        return $risks->where('status', 'active')->count();
     }
 
     private function getCycleTimeAnalysis()

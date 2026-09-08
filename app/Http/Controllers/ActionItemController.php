@@ -42,7 +42,6 @@ class ActionItemController extends Controller
 
         $validated['status'] = 'pending';
         $item = ActionItem::create($validated);
-        AuditLog::log('create', 'action', $item->id, null, $item->toArray());
 
         return redirect()->route('action-items.show', $item)->with('success', 'Action item created.');
     }
@@ -70,29 +69,24 @@ class ActionItemController extends Controller
             'comments' => 'nullable|string',
         ]);
 
-        $oldData = $actionItem->toArray();
         if ($validated['status'] === 'completed') {
             $validated['completed_at'] = now();
         }
 
         $actionItem->update($validated);
-        AuditLog::log('update', 'action', $actionItem->id, $oldData, $actionItem->fresh()->toArray());
 
         return redirect()->route('action-items.show', $actionItem)->with('success', 'Action item updated.');
     }
 
     public function destroy(ActionItem $actionItem)
     {
-        AuditLog::log('delete', 'action', $actionItem->id, $actionItem->toArray(), null);
         $actionItem->delete();
         return redirect()->route('action-items.index')->with('success', 'Action item deleted.');
     }
 
     public function complete(ActionItem $actionItem)
     {
-        $oldData = $actionItem->toArray();
         $actionItem->update(['status' => 'completed', 'completed_at' => now()]);
-        AuditLog::log('update', 'action', $actionItem->id, $oldData, $actionItem->fresh()->toArray());
 
         return redirect()->route('action-items.show', $actionItem)->with('success', 'Action item marked complete.');
     }

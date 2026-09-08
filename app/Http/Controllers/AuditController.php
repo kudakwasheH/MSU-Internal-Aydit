@@ -6,11 +6,21 @@ use App\Models\Audit;
 use App\Models\AuditLog;
 use App\Models\RiskRegister;
 use App\Models\User;
+use App\Services\RiskApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuditController extends Controller
 {
+    protected $apiService;
+    protected $erpService;
+
+    public function __construct(RiskApiService $apiService, \App\Services\ErpService $erpService)
+    {
+        $this->apiService = $apiService;
+        $this->erpService = $erpService;
+    }
+
     public function index(Request $request)
     {
         $query = Audit::with(['creator', 'approver', 'risks']);
@@ -37,9 +47,12 @@ class AuditController extends Controller
 
     public function create()
     {
-        $risks = RiskRegister::where('status', 'active')->get();
+        \Illuminate\Support\Facades\Artisan::call('risk:sync');
+        $risks = \App\Models\RiskRegister::where('status', 'active')->get();
         $users = User::all();
-        return view('audits.create', compact('risks', 'users'));
+        $budgetCodes = $this->erpService->fetchBudgetCodes();
+        $complianceRefs = $this->erpService->fetchComplianceReferences();
+        return view('audits.create', compact('risks', 'users', 'budgetCodes', 'complianceRefs'));
     }
 
     public function store(Request $request)
@@ -53,6 +66,10 @@ class AuditController extends Controller
             'planned_end_date' => 'required|date|after:planned_start_date',
             'risk_ids' => 'required|array|min:1',
             'risk_ids.*' => 'exists:risk_registers,id',
+            'team_members' => 'nullable|array',
+            'team_members.*' => 'exists:users,id',
+            'budget_code' => 'nullable|string',
+            'compliance_ref' => 'nullable|string',
         ], [
             'risk_ids.required' => 'You must link at least one risk to this audit.',
             'risk_ids.min' => 'You must link at least one risk to this audit.',
@@ -73,27 +90,33 @@ class AuditController extends Controller
             'planned_start_date' => $validated['planned_start_date'],
             'planned_end_date' => $validated['planned_end_date'],
             'created_by' => Auth::id(),
+            'budget_code' => $validated['budget_code'] ?? null,
+            'compliance_ref' => $validated['compliance_ref'] ?? null,
         ]);
 
         $audit->risks()->attach($validated['risk_ids']);
-
-        AuditLog::log('create', 'audit', $audit->id, null, $audit->toArray());
+        if (!empty($validated['team_members'])) {
+            $audit->teamMembers()->attach($validated['team_members']);
+        }
 
         return redirect()->route('audits.show', $audit)->with('success', 'Audit created successfully.');
     }
 
     public function show(Audit $audit)
     {
-        $audit->load(['creator', 'approver', 'risks', 'findings.assignee', 'workingPapers', 'qualityAssessments']);
+        $audit->load(['creator', 'approver', 'risks', 'findings.assignee', 'workingPapers', 'qualityAssessments', 'teamMembers', 'report']);
         return view('audits.show', compact('audit'));
     }
 
     public function edit(Audit $audit)
     {
-        $risks = RiskRegister::where('status', 'active')->get();
+        \Illuminate\Support\Facades\Artisan::call('risk:sync');
+        $risks = \App\Models\RiskRegister::where('status', 'active')->get();
         $users = User::all();
-        $audit->load('risks');
-        return view('audits.edit', compact('audit', 'risks', 'users'));
+        $budgetCodes = $this->erpService->fetchBudgetCodes();
+        $complianceRefs = $this->erpService->fetchComplianceReferences();
+        $audit->load(['risks', 'teamMembers']);
+        return view('audits.edit', compact('audit', 'risks', 'users', 'budgetCodes', 'complianceRefs'));
     }
 
     public function update(Request $request, Audit $audit)
@@ -108,6 +131,10 @@ class AuditController extends Controller
             'planned_end_date' => 'required|date|after:planned_start_date',
             'risk_ids' => 'required|array|min:1',
             'risk_ids.*' => 'exists:risk_registers,id',
+            'team_members' => 'nullable|array',
+            'team_members.*' => 'exists:users,id',
+            'budget_code' => 'nullable|string',
+            'compliance_ref' => 'nullable|string',
         ]);
 
         $oldData = $audit->toArray();
@@ -121,34 +148,32 @@ class AuditController extends Controller
 
         $riskIds = $validated['risk_ids'];
         unset($validated['risk_ids']);
+        
+        $teamMembers = $validated['team_members'] ?? [];
+        unset($validated['team_members']);
+
         $audit->update($validated);
         $audit->risks()->sync($riskIds);
-
-        AuditLog::log('update', 'audit', $audit->id, $oldData, $audit->fresh()->toArray());
+        $audit->teamMembers()->sync($teamMembers);
 
         return redirect()->route('audits.show', $audit)->with('success', 'Audit updated successfully.');
     }
 
     public function destroy(Audit $audit)
     {
-        AuditLog::log('delete', 'audit', $audit->id, $audit->toArray(), null);
         $audit->delete();
         return redirect()->route('audits.index')->with('success', 'Audit deleted.');
     }
 
     public function approve(Audit $audit)
     {
-        $oldData = $audit->toArray();
         $audit->update(['status' => 'planned', 'approved_by' => Auth::id()]);
-        AuditLog::log('approve', 'audit', $audit->id, $oldData, $audit->fresh()->toArray());
         return redirect()->route('audits.show', $audit)->with('success', 'Audit approved.');
     }
 
     public function submit(Audit $audit)
     {
-        $oldData = $audit->toArray();
         $audit->update(['status' => 'in_progress', 'actual_start_date' => now()]);
-        AuditLog::log('update', 'audit', $audit->id, $oldData, $audit->fresh()->toArray());
         return redirect()->route('audits.show', $audit)->with('success', 'Audit submitted for execution.');
     }
 }

@@ -6,21 +6,32 @@ use App\Models\Audit;
 use App\Models\Finding;
 use App\Models\RiskRegister;
 use App\Models\ActionItem;
+use App\Models\Report;
 use App\Models\AuditLog;
+use App\Services\RiskApiService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ReportController extends Controller
 {
+    protected $apiService;
+
+    public function __construct(RiskApiService $apiService)
+    {
+        $this->apiService = $apiService;
+    }
+
     public function generate()
     {
-        $audits = Audit::with(['creator', 'findings'])->get();
+        $risks = collect($this->apiService->fetchRisks());
+        $audits = Audit::all();
         $data = [
             'audits' => $audits,
             'findingsBySeverity' => Finding::select('severity', DB::raw('count(*) as count'))->groupBy('severity')->pluck('count', 'severity'),
             'auditsByStatus' => Audit::select('status', DB::raw('count(*) as count'))->groupBy('status')->pluck('count', 'status'),
-            'risksByCategory' => RiskRegister::where('status', 'active')->select('category', DB::raw('count(*) as count'))->groupBy('category')->pluck('count', 'category'),
+            'risksByCategory' => $risks->where('status', 'active')->groupBy('category')->map->count(),
             'overdueActions' => ActionItem::where('status', 'overdue')->count(),
             'overdueActionsList' => ActionItem::with(['finding', 'assignee'])->where('status', 'overdue')->latest()->take(5)->get(),
             'totalFindings' => Finding::count(),
@@ -36,7 +47,7 @@ class ReportController extends Controller
 
         $pdf = Pdf::loadView('reports.pdf', compact('audit'));
         $pdf->setPaper('a4');
-        return $pdf->download("Audit_Report_{$audit->audit_code}.pdf");
+        return $pdf->stream("Audit_Report_{$audit->audit_code}.pdf");
     }
 
     public function auditLogs(Request $request)
@@ -76,10 +87,86 @@ class ReportController extends Controller
 
     private function calculateRiskCoverage()
     {
-        $totalRisks = RiskRegister::count();
+        $risks = collect($this->apiService->fetchRisks());
+        $totalRisks = $risks->count();
         if ($totalRisks === 0) return 0;
         
         $coveredRisks = DB::table('audit_risks')->distinct('risk_id')->count('risk_id');
         return round(($coveredRisks / $totalRisks) * 100);
+    }
+
+    public function index()
+    {
+        $reports = Report::with(['audit', 'preparer', 'seniorReviewer', 'chiefApprover'])->latest()->paginate(10);
+        return view('reports.index', compact('reports'));
+    }
+
+    public function create(Request $request)
+    {
+        $audit = Audit::findOrFail($request->audit_id);
+        return view('reports.create', compact('audit'));
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'audit_id' => 'required|exists:audits,id',
+            'comments' => 'nullable|string',
+        ]);
+
+        if (Report::where('audit_id', $validated['audit_id'])->exists()) {
+            return redirect()->route('reports.index')->with('error', 'A report for this audit already exists.');
+        }
+
+        $report = Report::create([
+            'audit_id' => $validated['audit_id'],
+            'status' => 'draft',
+            'prepared_by' => Auth::id(),
+            'comments' => $validated['comments'],
+            'draft_issue_date' => now(),
+        ]);
+
+        return redirect()->route('reports.show', $report)->with('success', 'Draft report created.');
+    }
+
+    public function show(Report $report)
+    {
+        $report->load(['audit', 'preparer', 'seniorReviewer', 'chiefApprover']);
+        return view('reports.show', compact('report'));
+    }
+
+    public function submitForSeniorReview(Report $report)
+    {
+        $report->update(['status' => 'pending_senior_review']);
+        return redirect()->route('reports.show', $report)->with('success', 'Report submitted for Senior Review.');
+    }
+
+    public function submitForChiefApproval(Report $report)
+    {
+        $report->update([
+            'status' => 'pending_chief_approval',
+            'senior_reviewer_id' => Auth::id(),
+        ]);
+        return redirect()->route('reports.show', $report)->with('success', 'Report forwarded to Chief Internal Auditor.');
+    }
+
+    public function issueFinalReport(Report $report)
+    {
+        $report->update([
+            'status' => 'final_issued',
+            'chief_approver_id' => Auth::id(),
+            'final_issue_date' => now(),
+        ]);
+        return redirect()->route('reports.show', $report)->with('success', 'Final Report Issued successfully.');
+    }
+
+    public function rejectReport(Request $request, Report $report)
+    {
+        $request->validate(['comments' => 'required|string']);
+        $report->update([
+            'status' => 'draft',
+            'comments' => $request->comments,
+        ]);
+        return redirect()->route('reports.show', $report)->with('error', 'Report rejected and returned to draft status.');
     }
 }

@@ -4,14 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Audit extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
     protected $fillable = [
         'audit_code', 'title', 'description', 'audit_type', 'priority',
         'status', 'planned_start_date', 'planned_end_date',
         'actual_start_date', 'actual_end_date', 'created_by', 'approved_by',
+        'budget_code', 'compliance_ref',
     ];
 
     protected $casts = [
@@ -26,10 +28,16 @@ class Audit extends Model
     public function workingPapers() { return $this->hasMany(WorkingPaper::class); }
     public function findings() { return $this->hasMany(Finding::class); }
     public function qualityAssessments() { return $this->hasMany(QualityAssessment::class); }
+    public function report() { return $this->hasOne(Report::class); }
 
     public function risks()
     {
         return $this->belongsToMany(RiskRegister::class, 'audit_risks', 'audit_id', 'risk_id')->withTimestamps();
+    }
+
+    public function teamMembers()
+    {
+        return $this->belongsToMany(User::class, 'audit_user', 'audit_id', 'user_id')->withTimestamps();
     }
 
     public function getCycleTimeAttribute()

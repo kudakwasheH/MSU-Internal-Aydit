@@ -35,6 +35,17 @@
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition"><i class="fas fa-play mr-1"></i>Start</button>
                 </form>
                 @endif
+                @if(in_array($audit->status, ['in_progress', 'completed']))
+                    @if($audit->report)
+                        <a href="{{ route('reports.show', $audit->report) }}" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition"><i class="fas fa-file-invoice mr-1"></i>View Report</a>
+                    @else
+                        <form method="POST" action="{{ route('reports.store') }}">
+                            @csrf
+                            <input type="hidden" name="audit_id" value="{{ $audit->id }}">
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition"><i class="fas fa-file-invoice mr-1"></i>Draft Report</button>
+                        </form>
+                    @endif
+                @endif
                 <a href="{{ route('audits.edit', $audit) }}" class="px-4 py-2 bg-[#ffcc00] text-[#333] text-sm rounded-lg hover:bg-yellow-400 transition"><i class="fas fa-edit mr-1"></i>Edit</a>
                 <a href="{{ route('reports.download', $audit) }}" class="px-4 py-2 bg-[#004ea1] text-white text-sm rounded-lg hover:bg-[#001533] transition"><i class="fas fa-file-pdf mr-1"></i>PDF</a>
             </div>
@@ -44,6 +55,9 @@
             <div><p class="text-xs text-gray-500">Created By</p><p class="text-sm font-medium">{{ $audit->creator?->name }}</p></div>
             <div><p class="text-xs text-gray-500">Approved By</p><p class="text-sm font-medium">{{ $audit->approver?->name ?? '—' }}</p></div>
             <div><p class="text-xs text-gray-500">Cycle Time</p><p class="text-sm font-medium">{{ $audit->cycle_time ? $audit->cycle_time . ' days' : '—' }}</p></div>
+            <div><p class="text-xs text-gray-500">Budget Code (ERP)</p><p class="text-sm font-medium text-[#004ea1]">{{ $audit->budget_code ?? '—' }}</p></div>
+            <div><p class="text-xs text-gray-500">Compliance Ref</p><p class="text-sm font-medium text-[#004ea1]">{{ $audit->compliance_ref ?? '—' }}</p></div>
+            <div><p class="text-xs text-gray-500">Engagement Type</p><p class="text-sm font-medium">{{ ucfirst($audit->audit_type) }}</p></div>
             <div><p class="text-xs text-gray-500">Planned Start</p><p class="text-sm font-medium">{{ $audit->planned_start_date->format('d M Y') }}</p></div>
             <div><p class="text-xs text-gray-500">Planned End</p><p class="text-sm font-medium">{{ $audit->planned_end_date->format('d M Y') }}</p></div>
             <div><p class="text-xs text-gray-500">Actual Start</p><p class="text-sm font-medium">{{ $audit->actual_start_date?->format('d M Y') ?? '—' }}</p></div>
@@ -97,6 +111,17 @@
                         </div>
                     </div>
                     @endif
+                    @foreach($audit->teamMembers as $member)
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-blue-600 text-xs">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+                        <div>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Team Member</p>
+                            <p class="text-xs font-bold text-slate-700">{{ $member->name }}</p>
+                        </div>
+                    </div>
+                    @endforeach
                 </div>
             </div>
         </div>

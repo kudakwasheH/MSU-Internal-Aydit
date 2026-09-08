@@ -6,13 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Traits\Auditable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable, HasRoles, Auditable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'staff_id', 'department', 'position', 'approval_level',
+        'name', 'email', 'password', 'staff_id', 'department', 'position', 'approval_level', 'google_id', 'avatar',
     ];
 
     protected $hidden = ['password', 'remember_token'];

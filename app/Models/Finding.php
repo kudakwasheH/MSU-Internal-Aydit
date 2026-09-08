@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class Finding extends Model
 {
+    use Auditable;
     protected $fillable = [
         'audit_id', 'title', 'description', 'root_cause', 'impact',
         'recommendation', 'severity', 'status', 'escalation_level',

@@ -42,12 +42,44 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Budget Code (ERP Link)</label>
+                    <select name="budget_code" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-[#004ea1]">
+                        <option value="">Select Budget Code</option>
+                        @foreach($budgetCodes as $bc)
+                        <option value="{{ $bc['code'] }}" {{ old('budget_code', $audit->budget_code) == $bc['code'] ? 'selected' : '' }}>{{ $bc['code'] }} - {{ $bc['description'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Compliance Reference</label>
+                    <select name="compliance_ref" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-[#004ea1]">
+                        <option value="">Select Reference</option>
+                        @foreach($complianceRefs as $cr)
+                        <option value="{{ $cr['ref'] }}" {{ old('compliance_ref', $audit->compliance_ref) == $cr['ref'] ? 'selected' : '' }}>{{ $cr['ref'] }} - {{ $cr['title'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Planned Start *</label>
                     <input type="date" name="planned_start_date" value="{{ old('planned_start_date', $audit->planned_start_date->format('Y-m-d')) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-[#004ea1]">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Planned End *</label>
                     <input type="date" name="planned_end_date" value="{{ old('planned_end_date', $audit->planned_end_date->format('Y-m-d')) }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-[#004ea1]">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Audit Team Members <span class="text-xs text-gray-400">(Optional)</span></label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                    @foreach($users as $user)
+                    <label class="flex items-start gap-2 text-sm">
+                        <input type="checkbox" name="team_members[]" value="{{ $user->id }}" class="mt-0.5 rounded text-[#004ea1] focus:ring-[#004ea1]"
+                            {{ in_array($user->id, old('team_members', $audit->teamMembers->pluck('id')->toArray())) ? 'checked' : '' }}>
+                        <span>{{ $user->name }} — {{ $user->position }}</span>
+                    </label>
+                    @endforeach
                 </div>
             </div>
             <div>

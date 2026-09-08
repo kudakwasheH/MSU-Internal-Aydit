@@ -42,7 +42,7 @@ class WorkingPaperController extends Controller
         $validated['version'] = 1;
 
         if ($request->hasFile('evidence_file')) {
-            $path = $request->file('evidence_file')->store('evidence', 'public');
+            $path = $request->file('evidence_file')->store('evidence', 'local');
             $validated['file_path'] = $path;
         }
 
@@ -78,9 +78,9 @@ class WorkingPaperController extends Controller
 
         if ($request->hasFile('evidence_file')) {
             if ($workingPaper->file_path) {
-                Storage::disk('public')->delete($workingPaper->file_path);
+                Storage::disk('local')->delete($workingPaper->file_path);
             }
-            $path = $request->file('evidence_file')->store('evidence', 'public');
+            $path = $request->file('evidence_file')->store('evidence', 'local');
             $validated['file_path'] = $path;
         }
 
@@ -97,12 +97,21 @@ class WorkingPaperController extends Controller
     public function destroy(WorkingPaper $workingPaper)
     {
         if ($workingPaper->file_path) {
-            Storage::disk('public')->delete($workingPaper->file_path);
+            Storage::disk('local')->delete($workingPaper->file_path);
         }
         
         AuditLog::log('delete', 'working_paper', $workingPaper->id, $workingPaper->toArray(), null);
         $workingPaper->delete();
 
         return redirect()->back()->with('success', 'Working paper deleted.');
+    }
+
+    public function download(WorkingPaper $workingPaper)
+    {
+        if (!$workingPaper->file_path || !Storage::disk('local')->exists($workingPaper->file_path)) {
+            abort(404, 'Evidence file not found.');
+        }
+
+        return Storage::disk('local')->download($workingPaper->file_path);
     }
 }

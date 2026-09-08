@@ -52,7 +52,6 @@ class FindingController extends Controller
         $validated['escalation_level'] = 1;
 
         $finding = Finding::create($validated);
-        AuditLog::log('create', 'finding', $finding->id, null, $finding->toArray());
 
         return redirect()->route('findings.show', $finding)->with('success', 'Finding recorded successfully.');
     }
@@ -83,16 +82,13 @@ class FindingController extends Controller
             'assigned_to' => 'nullable|exists:users,id',
         ]);
 
-        $oldData = $finding->toArray();
         $finding->update($validated);
-        AuditLog::log('update', 'finding', $finding->id, $oldData, $finding->fresh()->toArray());
 
         return redirect()->route('findings.show', $finding)->with('success', 'Finding updated successfully.');
     }
 
     public function destroy(Finding $finding)
     {
-        AuditLog::log('delete', 'finding', $finding->id, $finding->toArray(), null);
         $finding->delete();
         return redirect()->route('findings.index')->with('success', 'Finding deleted.');
     }
@@ -118,7 +114,6 @@ class FindingController extends Controller
         ]);
 
         $finding->update(['escalation_level' => $newLevel]);
-        AuditLog::log('escalate', 'finding', $finding->id, ['escalation_level' => $oldLevel], ['escalation_level' => $newLevel]);
 
         return redirect()->route('findings.show', $finding)->with('success', 'Finding escalated successfully.');
     }

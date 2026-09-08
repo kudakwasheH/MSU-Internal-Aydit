@@ -80,13 +80,17 @@
                 @endcan
 
                 @can('view reports')
+                <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.index') || request()->routeIs('reports.show') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice"></i>
+                    <span x-show="sidebarOpen">Reports Workflow</span>
+                </a>
+                <a href="{{ route('reports.generate') }}" class="sidebar-link {{ request()->routeIs('reports.generate') ? 'active' : '' }}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span x-show="sidebarOpen">Reports Dashboard</span>
+                </a>
                 <a href="{{ route('reports.meeting-pack') }}" class="sidebar-link {{ request()->routeIs('reports.meeting-pack') ? 'active' : '' }}">
                     <i class="fas fa-chart-line"></i>
                     <span x-show="sidebarOpen">Meeting Pack</span>
-                </a>
-                <a href="{{ route('reports.generate') }}" class="sidebar-link {{ request()->routeIs('reports.generate') ? 'active' : '' }}">
-                    <i class="fas fa-file-invoice"></i>
-                    <span x-show="sidebarOpen">Reports Center</span>
                 </a>
                 @endcan
 
@@ -94,6 +98,13 @@
                 <a href="{{ route('audit-logs.index') }}" class="sidebar-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
                     <i class="fas fa-history"></i>
                     <span x-show="sidebarOpen">System Logs</span>
+                </a>
+                @endcan
+
+                @can('manage users')
+                <a href="{{ route('users.index') }}" class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <i class="fas fa-users-cog"></i>
+                    <span x-show="sidebarOpen">User Management</span>
                 </a>
                 @endcan
             </nav>

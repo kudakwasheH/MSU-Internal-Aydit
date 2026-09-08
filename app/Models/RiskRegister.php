@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class RiskRegister extends Model
 {
+    use Auditable;
     protected $table = 'risk_registers';
 
     protected $fillable = [
@@ -13,6 +15,7 @@ class RiskRegister extends Model
         'inherent_likelihood', 'inherent_impact',
         'residual_likelihood', 'residual_impact',
         'status', 'owner_id',
+        'kra_at_risk', 'cause', 'consequence', 'last_reviewed_at',
     ];
 
     protected $casts = [
@@ -67,5 +70,10 @@ class RiskRegister extends Model
             'Medium' => '#ffc107',
             'Low' => '#28a745',
         };
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'risk_code';
     }
 }

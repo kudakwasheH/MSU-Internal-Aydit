@@ -9,7 +9,7 @@
                 <h2 class="text-xl font-bold text-[#333] mt-2">{{ $risk->title }}</h2>
                 <p class="text-sm text-gray-500 mt-1">{{ $risk->description }}</p>
             </div>
-            <a href="{{ route('risks.edit', $risk) }}" class="px-4 py-2 bg-[#ffcc00] text-[#333] text-sm rounded-lg"><i class="fas fa-edit mr-1"></i>Edit</a>
+            <span class="px-3 py-1 bg-gray-100 text-gray-500 text-[10px] font-bold uppercase rounded-lg border border-gray-200"><i class="fas fa-lock mr-1"></i>External Master Risk</span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 pt-6 border-t border-slate-100">
             {{-- Inherent Column --}}

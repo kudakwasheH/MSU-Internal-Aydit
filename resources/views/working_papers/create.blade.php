@@ -67,7 +67,7 @@
             <label class="block text-xs font-bold text-[#004ea1] uppercase tracking-widest mb-4"><i class="fas fa-paperclip mr-1"></i> Evidence Repository (Upload Evidence)</label>
             
             <div class="flex items-center justify-center w-full">
-                <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-not-allowed bg-white hover:bg-slate-50 transition-colors">
+                <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-white hover:bg-slate-50 transition-colors">
                     <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                         <i class="fas fa-cloud-upload-alt text-2xl text-[#004ea1] mb-3"></i>
                         <p class="mb-1 text-xs text-slate-500 font-bold">Select evidence file (PDF, Excel, JPG)</p>

@@ -8,6 +8,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ActionItemController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WorkingPaperController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -26,12 +27,14 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('permission:view audits')->group(function () {
         Route::resource('audits', AuditController::class);
         Route::resource('working-papers', WorkingPaperController::class);
+        Route::get('/working-papers/{workingPaper}/download', [WorkingPaperController::class, 'download'])->name('working-papers.download');
         Route::post('/audits/{audit}/approve', [AuditController::class, 'approve'])->name('audits.approve')->middleware('permission:approve audits');
         Route::post('/audits/{audit}/submit', [AuditController::class, 'submit'])->name('audits.submit')->middleware('permission:edit audits');
     });
 
     Route::middleware('permission:view risks')->group(function () {
-        Route::resource('risks', RiskController::class);
+        Route::resource('risks', RiskController::class)->only(['index', 'show']);
+        Route::post('/risks/sync', [RiskController::class, 'sync'])->name('risks.sync')->middleware('permission:edit risks');
         Route::get('/risk-heatmap', [RiskController::class, 'heatmap'])->name('risks.heatmap');
     });
 
@@ -46,15 +49,25 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::middleware('permission:view reports')->group(function () {
-        Route::get('/reports', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:generate reports');
+        Route::get('/reports/dashboard', [ReportController::class, 'generate'])->name('reports.generate')->middleware('permission:generate reports');
         Route::get('/reports/meeting-pack', [ReportController::class, 'meetingPack'])->name('reports.meeting-pack');
         Route::get('/reports/rolling-plan', [ReportController::class, 'rollingPlan'])->name('reports.rolling-plan');
-        Route::get('/reports/{audit}/download', [ReportController::class, 'download'])->name('reports.download');
+        Route::get('/reports/download/{audit}', [ReportController::class, 'download'])->name('reports.download');
         Route::get('/audit-logs', [ReportController::class, 'auditLogs'])->name('audit-logs.index')->middleware('permission:view audit-logs');
+
+        Route::resource('reports', ReportController::class)->except(['destroy']);
+        Route::post('/reports/{report}/submit-senior', [ReportController::class, 'submitForSeniorReview'])->name('reports.submit-senior');
+        Route::post('/reports/{report}/submit-chief', [ReportController::class, 'submitForChiefApproval'])->name('reports.submit-chief');
+        Route::post('/reports/{report}/issue', [ReportController::class, 'issueFinalReport'])->name('reports.issue');
+        Route::post('/reports/{report}/reject', [ReportController::class, 'rejectReport'])->name('reports.reject');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
+    Route::middleware('permission:manage users')->group(function () {
+        Route::resource('users', UserController::class);
+    });
 });
 
 require __DIR__.'/auth.php';

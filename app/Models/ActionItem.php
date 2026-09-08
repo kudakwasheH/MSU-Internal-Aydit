@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class ActionItem extends Model
 {
+    use Auditable;
     protected $fillable = [
         'finding_id', 'action_description', 'assigned_to',
         'due_date', 'status', 'reminder_sent', 'completed_at', 'comments',
