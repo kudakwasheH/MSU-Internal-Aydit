@@ -32,11 +32,13 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, 'ends_with:@staff.msu.ac.zw'],
             'staff_id' => 'required|string|max:50|unique:'.User::class,
             'department' => 'required|string|max:100',
             'position' => 'required|string|max:100',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'email.ends_with' => 'The email address must be an official staff email ending with @staff.msu.ac.zw.',
         ]);
 
         $user = User::create([

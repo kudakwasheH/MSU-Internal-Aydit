@@ -32,7 +32,12 @@
                 <div class="space-y-2">
                     <label for="email" class="block text-sm font-semibold text-gray-700">Email Address</label>
                     <input type="email" name="email" id="email" value="{{ old('email', $user->email) }}" required
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none">
+                           class="w-full px-4 py-2.5 rounded-lg border @error('email') border-red-500 @else border-gray-300 @enderror focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none"
+                           placeholder="username@staff.msu.ac.zw">
+                    <p class="text-[11px] text-gray-500">Must be an official staff email ending with <span class="font-semibold text-[#004ea1]">@staff.msu.ac.zw</span></p>
+                    @error('email')
+                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Staff ID --}}

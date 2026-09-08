@@ -39,13 +39,15 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, 'ends_with:@staff.msu.ac.zw'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'staff_id' => ['required', 'string', 'max:20', 'unique:'.User::class],
             'department' => ['required', 'string', 'max:100'],
             'position' => ['required', 'string', 'max:100'],
             'approval_level' => ['required', 'integer', 'min:1', 'max:5'],
             'role' => ['required', 'exists:roles,name'],
+        ], [
+            'email.ends_with' => 'The email address must be an official staff email ending with @staff.msu.ac.zw.',
         ]);
 
         $user = User::create([
@@ -88,12 +90,14 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,'.$user->id, 'ends_with:@staff.msu.ac.zw'],
             'staff_id' => ['required', 'string', 'max:20', 'unique:users,staff_id,'.$user->id],
             'department' => ['required', 'string', 'max:100'],
             'position' => ['required', 'string', 'max:100'],
             'approval_level' => ['required', 'integer', 'min:1', 'max:5'],
             'role' => ['required', 'exists:roles,name'],
+        ], [
+            'email.ends_with' => 'The email address must be an official staff email ending with @staff.msu.ac.zw.',
         ]);
 
         $user->update([
