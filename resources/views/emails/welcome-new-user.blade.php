@@ -13,12 +13,16 @@
 
                     {{-- Header --}}
                     <tr>
-                        <td style="background: linear-gradient(135deg, #004ea1 0%, #003373 100%); padding: 40px 40px 30px; border-radius: 16px 16px 0 0; text-align: center;">
-                            <div style="width: 60px; height: 60px; background-color: rgba(255, 204, 0, 0.15); border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-                                <img src="https://img.icons8.com/fluency/48/shield-checkmark.png" alt="Shield" width="36" height="36" style="display: block; margin: 12px auto;">
-                            </div>
-                            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 0 0 8px; letter-spacing: -0.5px;">Welcome to MSU Internal Audit</h1>
-                            <p style="color: rgba(255, 255, 255, 0.75); font-size: 14px; margin: 0;">Management System &bull; Midlands State University</p>
+                        <td style="background: linear-gradient(135deg, #004ea1 0%, #003373 100%); padding: 36px 30px 28px; border-radius: 16px 16px 0 0; text-align: center;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto 16px;">
+                                <tr>
+                                    <td style="background-color: #ffffff; padding: 8px 18px; border-radius: 10px; text-align: center;">
+                                        <img src="{{ $message->embed(public_path('images/main-logo.png')) }}" alt="Midlands State University" style="height: 46px; max-width: 220px; width: auto; display: block; margin: 0 auto;">
+                                    </td>
+                                </tr>
+                            </table>
+                            <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.3px;">Welcome to MSU Internal Audit</h1>
+                            <p style="color: rgba(255, 255, 255, 0.85); font-size: 13px; margin: 0;">Management System &bull; Midlands State University</p>
                         </td>
                     </tr>
 
