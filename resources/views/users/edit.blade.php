@@ -83,25 +83,26 @@
                     </select>
                 </div>
 
-                <div class="md:col-span-2 mt-4 pt-4 border-t border-gray-100">
-                    <h3 class="text-sm font-bold text-gray-800 mb-2">Security</h3>
-                    <p class="text-xs text-gray-500 mb-4">Leave password fields empty if you don't want to change the password.</p>
-                </div>
-
-                {{-- Password --}}
-                <div class="space-y-2">
-                    <label for="password" class="block text-sm font-semibold text-gray-700">New Password</label>
-                    <input type="password" name="password" id="password"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none"
-                           placeholder="••••••••">
-                </div>
-
-                {{-- Confirm Password --}}
-                <div class="space-y-2">
-                    <label for="password_confirmation" class="block text-sm font-semibold text-gray-700">Confirm New Password</label>
-                    <input type="password" name="password_confirmation" id="password_confirmation"
-                           class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none"
-                           placeholder="••••••••">
+                {{-- SSO Status Notice --}}
+                <div class="md:col-span-2 p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-xs">
+                            <i class="fab fa-google text-[#004ea1] text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-900">Google Single Sign-On Account</p>
+                            <p class="text-gray-500">Authentication is linked to university email (<span class="font-medium text-gray-700">{{ $user->email }}</span>).</p>
+                        </div>
+                    </div>
+                    @if($user->google_id)
+                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-semibold text-[11px] flex items-center gap-1.5">
+                            <i class="fas fa-check-circle text-emerald-500"></i> Linked
+                        </span>
+                    @else
+                        <span class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-medium text-[11px] flex items-center gap-1.5">
+                            <i class="fas fa-clock text-amber-500"></i> Pending First Sign In
+                        </span>
+                    @endif
                 </div>
             </div>
 

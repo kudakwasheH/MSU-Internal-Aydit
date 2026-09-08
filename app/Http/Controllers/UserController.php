@@ -40,7 +40,6 @@ class UserController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class, 'ends_with:@staff.msu.ac.zw'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'staff_id' => ['required', 'string', 'max:20', 'unique:'.User::class],
             'department' => ['required', 'string', 'max:100'],
             'position' => ['required', 'string', 'max:100'],
@@ -53,7 +52,7 @@ class UserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make(\Illuminate\Support\Str::random(32)),
             'staff_id' => $request->staff_id,
             'department' => $request->department,
             'position' => $request->position,
@@ -62,7 +61,7 @@ class UserController extends Controller
 
         $user->assignRole($request->role);
 
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+        return redirect()->route('users.index')->with('success', 'User created successfully. User can now authenticate via Google SSO.');
     }
 
     /**
@@ -108,13 +107,6 @@ class UserController extends Controller
             'position' => $request->position,
             'approval_level' => $request->approval_level,
         ]);
-
-        if ($request->filled('password')) {
-            $request->validate([
-                'password' => ['confirmed', Rules\Password::defaults()],
-            ]);
-            $user->update(['password' => Hash::make($request->password)]);
-        }
 
         $user->syncRoles([$request->role]);
 
