@@ -132,32 +132,68 @@ class UserController extends Controller
                 $userId = $user->id;
 
                 // 1. Detach pivot and permissions
-                DB::table('audit_user')->where('user_id', $userId)->delete();
+                if (Schema::hasTable('audit_user')) {
+                    DB::table('audit_user')->where('user_id', $userId)->delete();
+                }
                 $user->syncRoles([]);
                 $user->syncPermissions([]);
 
                 // 2. Clear nullable assignments
-                DB::table('findings')->where('assigned_to', $userId)->update(['assigned_to' => null]);
-                DB::table('action_items')->where('assigned_to', $userId)->update(['assigned_to' => null]);
-                DB::table('risk_registers')->where('owner_id', $userId)->update(['owner_id' => null]);
-                DB::table('audits')->where('approved_by', $userId)->update(['approved_by' => null]);
-                DB::table('audit_logs')->where('user_id', $userId)->update(['user_id' => null]);
+                if (Schema::hasTable('findings') && Schema::hasColumn('findings', 'assigned_to')) {
+                    DB::table('findings')->where('assigned_to', $userId)->update(['assigned_to' => null]);
+                }
+                if (Schema::hasTable('action_items') && Schema::hasColumn('action_items', 'assigned_to')) {
+                    DB::table('action_items')->where('assigned_to', $userId)->update(['assigned_to' => null]);
+                }
+                if (Schema::hasTable('risk_registers') && Schema::hasColumn('risk_registers', 'owner_id')) {
+                    DB::table('risk_registers')->where('owner_id', $userId)->update(['owner_id' => null]);
+                }
+                if (Schema::hasTable('audits') && Schema::hasColumn('audits', 'approved_by')) {
+                    DB::table('audits')->where('approved_by', $userId)->update(['approved_by' => null]);
+                }
+                if (Schema::hasTable('audit_logs') && Schema::hasColumn('audit_logs', 'user_id')) {
+                    DB::table('audit_logs')->where('user_id', $userId)->update(['user_id' => null]);
+                }
 
                 if (Schema::hasTable('reports')) {
-                    DB::table('reports')->where('reviewed_by', $userId)->update(['reviewed_by' => null]);
-                    DB::table('reports')->where('approved_by', $userId)->update(['approved_by' => null]);
-                    DB::table('reports')->where('prepared_by', $userId)->update(['prepared_by' => $adminId]);
+                    if (Schema::hasColumn('reports', 'senior_reviewer_id')) {
+                        DB::table('reports')->where('senior_reviewer_id', $userId)->update(['senior_reviewer_id' => null]);
+                    }
+                    if (Schema::hasColumn('reports', 'chief_approver_id')) {
+                        DB::table('reports')->where('chief_approver_id', $userId)->update(['chief_approver_id' => null]);
+                    }
+                    if (Schema::hasColumn('reports', 'prepared_by')) {
+                        DB::table('reports')->where('prepared_by', $userId)->update(['prepared_by' => $adminId]);
+                    }
                 }
 
                 // 3. Reassign non-nullable creator / reviewer / owner foreign keys to current admin
-                DB::table('findings')->where('created_by', $userId)->update(['created_by' => $adminId]);
-                DB::table('action_items')->where('created_by', $userId)->update(['created_by' => $adminId]);
-                DB::table('working_papers')->where('created_by', $userId)->update(['created_by' => $adminId]);
-                DB::table('quality_assessments')->where('reviewer_id', $userId)->update(['reviewer_id' => $adminId]);
-                DB::table('escalations')->where('escalated_to', $userId)->update(['escalated_to' => $adminId]);
-                DB::table('escalations')->where('escalated_by', $userId)->update(['escalated_by' => $adminId]);
-                DB::table('risk_treatments')->where('owner_id', $userId)->update(['owner_id' => $adminId]);
-                DB::table('audits')->where('created_by', $userId)->update(['created_by' => $adminId]);
+                if (Schema::hasTable('findings') && Schema::hasColumn('findings', 'created_by')) {
+                    DB::table('findings')->where('created_by', $userId)->update(['created_by' => $adminId]);
+                }
+                if (Schema::hasTable('action_items') && Schema::hasColumn('action_items', 'created_by')) {
+                    DB::table('action_items')->where('created_by', $userId)->update(['created_by' => $adminId]);
+                }
+                if (Schema::hasTable('working_papers') && Schema::hasColumn('working_papers', 'created_by')) {
+                    DB::table('working_papers')->where('created_by', $userId)->update(['created_by' => $adminId]);
+                }
+                if (Schema::hasTable('quality_assessments') && Schema::hasColumn('quality_assessments', 'reviewer_id')) {
+                    DB::table('quality_assessments')->where('reviewer_id', $userId)->update(['reviewer_id' => $adminId]);
+                }
+                if (Schema::hasTable('escalations')) {
+                    if (Schema::hasColumn('escalations', 'escalated_to')) {
+                        DB::table('escalations')->where('escalated_to', $userId)->update(['escalated_to' => $adminId]);
+                    }
+                    if (Schema::hasColumn('escalations', 'escalated_by')) {
+                        DB::table('escalations')->where('escalated_by', $userId)->update(['escalated_by' => $adminId]);
+                    }
+                }
+                if (Schema::hasTable('risk_treatments') && Schema::hasColumn('risk_treatments', 'owner_id')) {
+                    DB::table('risk_treatments')->where('owner_id', $userId)->update(['owner_id' => $adminId]);
+                }
+                if (Schema::hasTable('audits') && Schema::hasColumn('audits', 'created_by')) {
+                    DB::table('audits')->where('created_by', $userId)->update(['created_by' => $adminId]);
+                }
 
                 // 4. Delete the user
                 $user->delete();
