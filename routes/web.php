@@ -54,6 +54,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/reports/meeting-pack', [ReportController::class, 'meetingPack'])->name('reports.meeting-pack');
         Route::get('/reports/rolling-plan', [ReportController::class, 'rollingPlan'])->name('reports.rolling-plan');
         Route::get('/reports/download/{audit}', [ReportController::class, 'download'])->name('reports.download');
+        Route::get('/system-manual/download', [ReportController::class, 'downloadSystemManual'])->name('system-manual.download');
         Route::get('/audit-logs', [ReportController::class, 'auditLogs'])->name('audit-logs.index')->middleware('permission:view audit-logs');
 
         Route::resource('reports', ReportController::class)->except(['destroy']);

@@ -50,6 +50,13 @@ class ReportController extends Controller
         return $pdf->stream("Audit_Report_{$audit->audit_code}.pdf");
     }
 
+    public function downloadSystemManual()
+    {
+        $pdf = Pdf::loadView('reports.system_manual_pdf');
+        $pdf->setPaper('a4');
+        return $pdf->stream("MSU_Internal_Audit_System_Manual_and_Workflows.pdf");
+    }
+
     public function auditLogs(Request $request)
     {
         $query = AuditLog::with('user')->latest();

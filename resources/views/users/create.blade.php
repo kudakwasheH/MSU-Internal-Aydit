@@ -68,11 +68,14 @@
                 <div class="space-y-2">
                     <label for="approval_level" class="block text-sm font-semibold text-gray-700">Approval Level (1-5)</label>
                     <select name="approval_level" id="approval_level" required
-                            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none">
-                        @for($i = 1; $i <= 5; $i++)
-                            <option value="{{ $i }}" {{ old('approval_level') == $i ? 'selected' : '' }}>Level {{ $i }}</option>
-                        @endfor
+                            class="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#004ea1]/20 focus:border-[#004ea1] transition-all outline-none text-sm">
+                        <option value="1" {{ old('approval_level', 1) == 1 ? 'selected' : '' }}>Level 1 — Operational / Field Auditor</option>
+                        <option value="2" {{ old('approval_level') == 2 ? 'selected' : '' }}>Level 2 — Senior Auditor / Supervisory Reviewer</option>
+                        <option value="3" {{ old('approval_level') == 3 ? 'selected' : '' }}>Level 3 — Audit Manager / Chief Internal Auditor</option>
+                        <option value="4" {{ old('approval_level') == 4 ? 'selected' : '' }}>Level 4 — Executive / Audit Committee / Council</option>
+                        <option value="5" {{ old('approval_level') == 5 ? 'selected' : '' }}>Level 5 — System Administrator</option>
                     </select>
+                    <p class="text-[11px] text-gray-400">Defines hierarchical sign-off authority and delegation limits.</p>
                 </div>
 
                 {{-- Role --}}
