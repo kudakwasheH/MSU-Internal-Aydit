@@ -26,6 +26,7 @@ Route::middleware(['auth'])->group(function () {
     // Resources & specific actions locked by Permissions
     Route::middleware('permission:view audits')->group(function () {
         Route::resource('audits', AuditController::class);
+        Route::post('/audits/{audit}/assign-team', [AuditController::class, 'assignTeam'])->name('audits.assign-team')->middleware('permission:edit audits');
         Route::resource('working-papers', WorkingPaperController::class);
         Route::get('/working-papers/{workingPaper}/download', [WorkingPaperController::class, 'download'])->name('working-papers.download');
         Route::post('/audits/{audit}/approve', [AuditController::class, 'approve'])->name('audits.approve')->middleware('permission:approve audits');
@@ -58,8 +59,13 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('reports', ReportController::class)->except(['destroy']);
         Route::post('/reports/{report}/submit-senior', [ReportController::class, 'submitForSeniorReview'])->name('reports.submit-senior');
         Route::post('/reports/{report}/submit-chief', [ReportController::class, 'submitForChiefApproval'])->name('reports.submit-chief');
+        Route::post('/reports/{report}/approve-chief', [ReportController::class, 'approveChief'])->name('reports.approve-chief');
         Route::post('/reports/{report}/issue', [ReportController::class, 'issueFinalReport'])->name('reports.issue');
+        Route::post('/reports/{report}/return-revision', [ReportController::class, 'returnForRevision'])->name('reports.return-revision');
         Route::post('/reports/{report}/reject', [ReportController::class, 'rejectReport'])->name('reports.reject');
+        Route::post('/reports/{report}/add-comment', [ReportController::class, 'addComment'])->name('reports.add-comment');
+        Route::post('/reports/{report}/toggle-comment/{index}', [ReportController::class, 'toggleCommentStatus'])->name('reports.toggle-comment');
+        Route::post('/reports/{report}/update-dates', [ReportController::class, 'updateDates'])->name('reports.update-dates');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -41,7 +41,8 @@ class UsersTableSeeder extends Seeder
         $auditor = Role::firstOrCreate(['name' => 'Auditor']);
         $auditor->givePermissionTo([
             'view audits', 'view working-papers', 'create working-papers', 'edit working-papers',
-            'upload evidence', 'manage audit-templates', 'view findings', 'create findings', 'edit findings', 'view action-items', 'view dashboard'
+            'upload evidence', 'manage audit-templates', 'view findings', 'create findings', 'edit findings', 'view action-items', 'view dashboard',
+            'view reports', 'generate reports', 'export reports',
         ]);
 
         // 2. Audit Management (Audit Manager / Head of Audit)

@@ -23,7 +23,7 @@ class AuditController extends Controller
 
     public function index(Request $request)
     {
-        $query = Audit::with(['creator', 'approver', 'risks']);
+        $query = Audit::with(['creator', 'approver', 'risks', 'teamMembers', 'report']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -42,7 +42,20 @@ class AuditController extends Controller
         }
 
         $audits = $query->latest()->paginate(10);
-        return view('audits.index', compact('audits'));
+        $allUsers = User::orderBy('name')->get();
+        return view('audits.index', compact('audits', 'allUsers'));
+    }
+
+    public function assignTeam(Request $request, Audit $audit)
+    {
+        $validated = $request->validate([
+            'team_members' => 'nullable|array',
+            'team_members.*' => 'exists:users,id',
+        ]);
+
+        $audit->teamMembers()->sync($validated['team_members'] ?? []);
+
+        return back()->with('success', 'Audit team members updated successfully for ' . $audit->audit_code);
     }
 
     public function create()
@@ -104,8 +117,9 @@ class AuditController extends Controller
 
     public function show(Audit $audit)
     {
-        $audit->load(['creator', 'approver', 'risks', 'findings.assignee', 'workingPapers', 'qualityAssessments', 'teamMembers', 'report']);
-        return view('audits.show', compact('audit'));
+        $audit->load(['creator', 'approver', 'risks', 'findings.assignee', 'workingPapers', 'qualityAssessments', 'teamMembers', 'report.preparer', 'report.seniorReviewer', 'report.chiefApprover']);
+        $allUsers = User::orderBy('name')->get();
+        return view('audits.show', compact('audit', 'allUsers'));
     }
 
     public function edit(Audit $audit)

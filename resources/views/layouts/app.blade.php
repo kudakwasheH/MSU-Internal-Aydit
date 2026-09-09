@@ -80,9 +80,9 @@
                 @endcan
 
                 @can('view reports')
-                <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.index') || request()->routeIs('reports.show') ? 'active' : '' }}">
+                <a href="{{ route('reports.index') }}" class="sidebar-link {{ (request()->routeIs('reports.*') && !request()->routeIs('reports.generate') && !request()->routeIs('reports.meeting-pack') && !request()->routeIs('reports.rolling-plan')) ? 'active' : '' }}">
                     <i class="fas fa-file-invoice"></i>
-                    <span x-show="sidebarOpen">Reports Workflow</span>
+                    <span x-show="sidebarOpen">Reports Centre</span>
                 </a>
                 <a href="{{ route('reports.generate') }}" class="sidebar-link {{ request()->routeIs('reports.generate') ? 'active' : '' }}">
                     <i class="fas fa-chart-bar"></i>
