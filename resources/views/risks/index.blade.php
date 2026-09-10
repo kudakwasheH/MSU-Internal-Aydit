@@ -62,11 +62,11 @@
                 </select>
             </div>
             <div class="flex flex-col gap-2.5 flex-1">
-                <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Rating</label>
-                <select name="rating" onchange="this.form.submit()" class="rounded-lg px-5 py-3 w-full text-xs outline-none hover:border-slate-500 transition-colors cursor-pointer">
-                    <option value="">All Ratings</option>
-                    @foreach(['low','medium','high','critical'] as $r)
-                    <option value="{{ $r }}" {{ request('rating') == $r ? 'selected' : '' }}>{{ ucfirst($r) }}</option>
+                <label class="text-[10px] text-slate-500 font-black uppercase tracking-widest ml-1">Status</label>
+                <select name="status" onchange="this.form.submit()" class="rounded-lg px-5 py-3 w-full text-xs outline-none hover:border-slate-500 transition-colors cursor-pointer">
+                    <option value="">All Statuses</option>
+                    @foreach(['active','mitigated','obsolete'] as $s)
+                    <option value="{{ $s }}" {{ request('status') == $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -93,6 +93,7 @@
                 <tr>
                     <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-[#004ea1]">Risk ID</th>
                     <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Review Date</th>
+                    <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Status</th>
                     <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Category</th>
                     <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">Description</th>
                     <th class="px-10 py-6 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">KRA at Risk</th>
@@ -109,6 +110,19 @@
                         </a>
                     </td>
                     <td class="px-10 py-8 text-xs font-bold text-slate-500">{{ $risk->last_reviewed_at ?? date('Y-m-d') }}</td>
+                    <td class="px-10 py-8">
+                        @php
+                            $statusColor = match($risk->status ?? 'active') {
+                                'active' => 'bg-green-100 text-green-700 border-green-200',
+                                'mitigated' => 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                                'obsolete' => 'bg-red-100 text-red-700 border-red-200',
+                                default => 'bg-slate-100 text-slate-600 border-slate-200',
+                            };
+                        @endphp
+                        <span class="px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border {{ $statusColor }}">
+                            {{ $risk->status ?? 'active' }}
+                        </span>
+                    </td>
                     <td class="px-10 py-8">
                         <span class="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-200">
                             {{ $risk->category }}
