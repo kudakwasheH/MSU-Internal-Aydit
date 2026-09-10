@@ -94,7 +94,7 @@ class UsersTableSeeder extends Seeder
 
         // 3. Seed only the root Admin account
         $adminUser = User::updateOrCreate(
-            ['email' => 'admin@staff.msu.ac.zw'],
+            ['email' => 'harutizwik@staff.msu.ac.zw'],
             [
                 'name' => 'Admin User',
                 'staff_id' => 'MSU001',
