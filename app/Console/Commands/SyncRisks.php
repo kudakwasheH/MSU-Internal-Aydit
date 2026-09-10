@@ -6,7 +6,6 @@ use Illuminate\Console\Command;
 use App\Services\RiskApiService;
 use App\Models\RiskRegister;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 
 class SyncRisks extends Command
 {
@@ -44,39 +43,35 @@ class SyncRisks extends Command
 
         foreach ($apiRisks as $apiRisk) {
             try {
-                // Find or create owner based on email if provided, or use a default
-                $ownerId = null;
+                $owner = null;
                 if (!empty($apiRisk['owner_email'])) {
-                    $user = User::where('email', $apiRisk['owner_email'])->first();
-                    if ($user) {
-                        $ownerId = $user->id;
-                    }
+                    $owner = User::where('email', $apiRisk['owner_email'])->first();
+                }
+                if (!$owner && !empty($apiRisk['owner'])) {
+                    $owner = User::where('department', $apiRisk['owner'])->first();
+                }
+                if (!$owner) {
+                    $owner = User::first();
                 }
 
-                // If no owner found, default to first admin or skip? 
-                // Let's assume the API provides a valid owner_id if it's internal, 
-                // but usually syncing across systems uses identifiers like emails.
-                if (!$ownerId && !empty($apiRisk['owner_id'])) {
-                    // Maybe the IDs are synced too? Risky assumption.
-                    $ownerId = $apiRisk['owner_id'];
-                }
-
-                if (!$ownerId) {
-                    $ownerId = User::first()->id; // Fallback to first user
+                if (!$owner) {
+                    $this->warn('No owner found for risk: ' . ($apiRisk['risk_code'] ?? 'Unknown'));
+                    $errorCount++;
+                    continue;
                 }
 
                 RiskRegister::updateOrCreate(
                     ['risk_code' => $apiRisk['risk_code']],
                     [
-                        'title' => $apiRisk['title'],
-                        'description' => $apiRisk['description'],
+                        'title' => $apiRisk['title'] ?? 'Untitled risk',
+                        'description' => $apiRisk['description'] ?? 'No description provided',
                         'category' => $apiRisk['category'] ?? 'operational',
                         'inherent_likelihood' => $apiRisk['inherent_likelihood'] ?? 3,
                         'inherent_impact' => $apiRisk['inherent_impact'] ?? 3,
                         'residual_likelihood' => $apiRisk['residual_likelihood'] ?? 2,
                         'residual_impact' => $apiRisk['residual_impact'] ?? 2,
                         'status' => $apiRisk['status'] ?? 'active',
-                        'owner_id' => $ownerId,
+                        'owner_id' => $owner->id,
                     ]
                 );
 
