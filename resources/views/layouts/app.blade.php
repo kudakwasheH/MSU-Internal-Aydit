@@ -107,16 +107,6 @@
                     <span x-show="sidebarOpen">User Management</span>
                 </a>
                 @endcan
-
-                <a href="{{ route('system-manual.download') }}" target="_blank" class="sidebar-link text-[#ffcc00] hover:text-white" title="Download System Manual & Workflow PDF">
-                    <i class="fas fa-file-pdf"></i>
-                    <span x-show="sidebarOpen">System Manual (PDF)</span>
-                </a>
-
-                <a href="{{ route('system-manual.download-word') }}" class="sidebar-link text-[#ffcc00] hover:text-white" title="Download System Manual & Workflow Word">
-                    <i class="fas fa-file-word"></i>
-                    <span x-show="sidebarOpen">System Manual (Word)</span>
-                </a>
             </nav>
 
             {{-- User Profile Link --}}
