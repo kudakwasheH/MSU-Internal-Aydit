@@ -119,3 +119,30 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const emailInput = document.getElementById('email');
+    if (!emailInput) return;
+
+    emailInput.addEventListener('input', function(e) {
+        const val = this.value;
+        // When user types @, auto-complete the domain
+        if (val.endsWith('@')) {
+            this.value = val + 'staff.msu.ac.zw';
+            // Place cursor right after the @
+            const pos = val.length;
+            this.setSelectionRange(pos, this.value.length);
+        }
+    });
+
+    emailInput.addEventListener('keydown', function(e) {
+        // If the domain part is selected and user presses a key, let them overwrite
+        if (this.selectionStart !== this.selectionEnd && e.key.length === 1 && e.key !== '@') {
+            // Allow natural overwrite behavior
+        }
+    });
+});
+</script>
+@endpush
