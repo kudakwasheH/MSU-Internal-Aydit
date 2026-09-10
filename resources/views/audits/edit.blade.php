@@ -83,7 +83,7 @@
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Linked Risks *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Linked Risks <span class="text-xs text-gray-400">(Required when status is not Draft)</span></label>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-lg p-3">
                     @foreach($risks as $risk)
                     <label class="flex items-start gap-2 text-sm">

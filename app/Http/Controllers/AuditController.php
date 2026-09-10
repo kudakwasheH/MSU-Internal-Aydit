@@ -77,15 +77,20 @@ class AuditController extends Controller
             'priority' => 'required|in:high,medium,low',
             'planned_start_date' => 'required|date',
             'planned_end_date' => 'required|date|after:planned_start_date',
-            'risk_ids' => 'required|array|min:1',
+            'risk_ids' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (in_array($request->input('status', 'draft'), ['planned', 'in_progress', 'completed']) && empty($value)) {
+                        $fail('You must link at least one risk to this audit.');
+                    }
+                },
+            ],
             'risk_ids.*' => 'exists:risk_registers,id',
             'team_members' => 'nullable|array',
             'team_members.*' => 'exists:users,id',
             'budget_code' => 'nullable|string',
             'compliance_ref' => 'nullable|string',
-        ], [
-            'risk_ids.required' => 'You must link at least one risk to this audit.',
-            'risk_ids.min' => 'You must link at least one risk to this audit.',
         ]);
 
         $year = date('Y');
@@ -107,7 +112,7 @@ class AuditController extends Controller
             'compliance_ref' => $validated['compliance_ref'] ?? null,
         ]);
 
-        $audit->risks()->attach($validated['risk_ids']);
+        $audit->risks()->attach($validated['risk_ids'] ?? []);
         if (!empty($validated['team_members'])) {
             $audit->teamMembers()->attach($validated['team_members']);
         }
@@ -143,7 +148,15 @@ class AuditController extends Controller
             'status' => 'required|in:draft,planned,in_progress,completed,cancelled',
             'planned_start_date' => 'required|date',
             'planned_end_date' => 'required|date|after:planned_start_date',
-            'risk_ids' => 'required|array|min:1',
+            'risk_ids' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) use ($request, $audit) {
+                    if (in_array($request->input('status', $audit->status), ['planned', 'in_progress', 'completed']) && empty($value)) {
+                        $fail('You must link at least one risk to this audit.');
+                    }
+                },
+            ],
             'risk_ids.*' => 'exists:risk_registers,id',
             'team_members' => 'nullable|array',
             'team_members.*' => 'exists:users,id',
@@ -160,7 +173,7 @@ class AuditController extends Controller
             $validated['actual_end_date'] = now();
         }
 
-        $riskIds = $validated['risk_ids'];
+        $riskIds = $validated['risk_ids'] ?? [];
         unset($validated['risk_ids']);
         
         $teamMembers = $validated['team_members'] ?? [];
