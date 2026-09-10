@@ -16,6 +16,7 @@
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^1.1",
+        "phpoffice/phpword": "^1.4",
         "spatie/laravel-permission": "^6.25",
         "tightenco/ziggy": "^2.4"
     },
