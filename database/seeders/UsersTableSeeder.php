@@ -92,27 +92,18 @@ class UsersTableSeeder extends Seeder
         ]);
 
 
-        // 3. Seed Root Users for each
-        $users = [
-            ['name' => 'Admin User', 'email' => 'admin@staff.msu.ac.zw', 'staff_id' => 'MSU001', 'department' => 'IT', 'position' => 'System Administrator', 'approval_level' => 4, 'role' => 'System Admin'],
-            ['name' => 'John Moyo', 'email' => 'auditmanager@staff.msu.ac.zw', 'staff_id' => 'MSU002', 'department' => 'Internal Audit', 'position' => 'Audit Manager', 'approval_level' => 3, 'role' => 'Audit Manager'],
-            ['name' => 'Tendai Chipere', 'email' => 'auditor1@staff.msu.ac.zw', 'staff_id' => 'MSU003', 'department' => 'Internal Audit', 'position' => 'Senior Auditor', 'approval_level' => 2, 'role' => 'Auditor'],
-            ['name' => 'Grace Ncube', 'email' => 'riskofficer@staff.msu.ac.zw', 'staff_id' => 'MSU004', 'department' => 'Risk Management', 'position' => 'Risk Officer', 'approval_level' => 2, 'role' => 'Risk Officer'],
-            ['name' => 'Prof. Sibanda', 'email' => 'committee@staff.msu.ac.zw', 'staff_id' => 'MSU005', 'department' => 'Audit Committee', 'position' => 'Committee Chair', 'approval_level' => 4, 'role' => 'Audit Committee'],
-            ['name' => 'Chairman Nkomo', 'email' => 'board@staff.msu.ac.zw', 'staff_id' => 'MSU006', 'department' => 'Council', 'position' => 'Board Chairman', 'approval_level' => 4, 'role' => 'Council / Board'],
-            ['name' => 'IT Lead', 'email' => 'itadmin@staff.msu.ac.zw', 'staff_id' => 'MSU007', 'department' => 'IT Services', 'position' => 'Systems Admin', 'approval_level' => 4, 'role' => 'IT Department'],
-            ['name' => 'Director Finance', 'email' => 'finance@staff.msu.ac.zw', 'staff_id' => 'MSU008', 'department' => 'Finance', 'position' => 'Finance Director', 'approval_level' => 4, 'role' => 'Finance Department'],
-            ['name' => 'Dr. Chigwedere', 'email' => 'executive@staff.msu.ac.zw', 'staff_id' => 'MSU009', 'department' => 'Executive Office', 'position' => 'Vice Chancellor', 'approval_level' => 4, 'role' => 'Executive Management'],
-        ];
-
-        foreach ($users as $userData) {
-            $role = $userData['role'];
-            unset($userData['role']);
-            $userData['password'] = Hash::make('password123');
-            
-            // Allow rerunning seeder and updating existing user records seamlessly
-            $user = User::updateOrCreate(['staff_id' => $userData['staff_id']], $userData);
-            $user->syncRoles([$role]); // Ensure exact matching roles
-        }
+        // 3. Seed only the root Admin account
+        $adminUser = User::updateOrCreate(
+            ['email' => 'admin@staff.msu.ac.zw'],
+            [
+                'name' => 'Admin User',
+                'staff_id' => 'MSU001',
+                'department' => 'IT',
+                'position' => 'System Administrator',
+                'approval_level' => 5,
+                'password' => Hash::make('password123'),
+            ]
+        );
+        $adminUser->syncRoles(['System Admin']);
     }
 }
